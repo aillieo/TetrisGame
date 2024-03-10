@@ -10,10 +10,10 @@ namespace AillieoTech.Game
     {
         I,
         J,
-        //L,
-        //O,
-        //S,
-        //T,
-        //Z,
+        L,
+        O,
+        S,
+        T,
+        Z,
     }
 }

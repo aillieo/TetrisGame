@@ -14,12 +14,16 @@ namespace AillieoTech.Game
 
         private byte[,] shape;
         private Vector2Int position;
+        private int rotationIndex;
 
         public Tetromino(TetrominoType tetrominoType)
         {
             this.tetrominoType = tetrominoType;
-            this.shape = Config.configs[tetrominoType].shape;
-            this.position = Config.spawnPosition;
+
+            var config = Config.configs[tetrominoType];
+
+            this.shape = Utils.Copy(config.shape);
+            this.position = Config.spawnPosition + config.spawnOffset;
         }
 
         public byte[,] GetShape()
@@ -37,9 +41,19 @@ namespace AillieoTech.Game
             return this.position;
         }
 
-        public void Move(Vector2Int offset)
+        public void SetPosition(Vector2Int newPosition)
         {
-            this.position += offset;
+            this.position = newPosition;
+        }
+
+        public int GetRotationIndex()
+        {
+            return this.rotationIndex;
+        }
+
+        public void SetRotationIndex(int newRotationIndex)
+        {
+            this.rotationIndex = newRotationIndex;
         }
     }
 }

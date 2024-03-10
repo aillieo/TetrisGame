@@ -10,62 +10,25 @@ namespace AillieoTech.Game
     using System.Collections.Generic;
     using UnityEngine;
 
-    public class TetrisGame : MonoBehaviour
+    public class TetrisGame
     {
-        private Board board = new Board();
-        private Tetromino currentTetromino;
-        private int gridSize = 20;
-        private Color emptyColor = Color.white;
-        private Color filledColor = Color.green;
+        public Board board = new Board();
+        public Tetromino currentTetromino;
+        public int score;
 
-        private void Start()
-        {
-            this.currentTetromino = this.GenerateNewTetromino();
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
-            {
-                this.MoveTetromino(Vector2Int.left);
-            }
-            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-            {
-                this.MoveTetromino(Vector2Int.right);
-            }
-            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
-            {
-                this.MoveTetromino(Vector2Int.down);
-            }
-            else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
-            {
-                this.RotateTetromino(1);
-            }
-            else if (Input.GetKeyDown(KeyCode.Space))
-            {
-                this.HardDrop();
-            }
-        }
-
-        private void MoveTetromino(Vector2Int direction)
+        public void MoveTetromino(Vector2Int direction)
         {
             Vector2Int newPosition = this.currentTetromino.GetPosition() + direction;
             if (this.IsValidMove(this.currentTetromino.GetShape(), newPosition))
             {
-                this.currentTetromino.Move(direction);
+                this.currentTetromino.SetPosition(newPosition);
             }
             else
             {
                 if (direction == Vector2Int.down)
                 {
-                    var reachedBottom = newPosition.y <= 0;
-                    var collided = !this.IsValidMove(this.currentTetromino.GetShape(), this.currentTetromino.GetPosition() + Vector2Int.down);
-                    if (reachedBottom || collided)
-                    {
-                        this.CopyTetrominoToBoard();
-                        this.CheckAndClearRows();
-                        this.currentTetromino = this.GenerateNewTetromino();
-                    }
+                    this.CopyTetrominoToBoard();
+                    this.GenerateNewTetromino();
                 }
             }
         }
@@ -74,12 +37,11 @@ namespace AillieoTech.Game
         {
             Vector2Int position = this.currentTetromino.GetPosition();
             var shape = this.currentTetromino.GetShape();
-            var width = shape.GetLength(0);
-            var height = shape.GetLength(1);
+            var size = Utils.GetSize(shape);
 
-            for (var x = 0; x < width; x++)
+            for (var x = 0; x < size.x; x++)
             {
-                for (var y = 0; y < height; y++)
+                for (var y = 0; y < size.y; y++)
                 {
                     if (shape[x, y] == 1)
                     {
@@ -90,28 +52,43 @@ namespace AillieoTech.Game
             }
 
             this.CheckAndClearRows();
+
+            this.currentTetromino = null;
         }
 
-        private Tetromino GenerateNewTetromino()
+        public void GenerateNewTetromino()
         {
             var allTypes = (TetrominoType[])Enum.GetValues(typeof(TetrominoType));
             var randomIndex = UnityEngine.Random.Range(0, allTypes.Length);
             TetrominoType tetrominoType = allTypes[randomIndex];
-            return new Tetromino(tetrominoType);
+            this.currentTetromino = new Tetromino(tetrominoType);
         }
 
-        private void RotateTetromino(int direction)
+        public void RotateTetromino(int direction)
         {
-            var rotated = Utils.RotateArray(this.currentTetromino.GetShape(), direction > 0);
-            if (this.IsValidMove(rotated, this.currentTetromino.GetPosition()))
+            var rotationIndex = this.currentTetromino.GetRotationIndex();
+            var targetRotationIndex = (rotationIndex + 1) % 4;
+            var key = $"{rotationIndex}{targetRotationIndex}".Replace('1', 'R').Replace('3', 'L');
+            var wallKicks = Config.configs[TetrominoType.I].wallKicks[key];
+            var shape = this.currentTetromino.GetShape();
+            var rotated = Utils.RotateArray(shape, direction > 0);
+
+            foreach (var wk in wallKicks)
             {
-                this.currentTetromino.SetShape(rotated);
+                var newPosition = this.currentTetromino.GetPosition() + wk;
+                if (this.IsValidMove(rotated, newPosition))
+                {
+                    this.currentTetromino.SetShape(rotated);
+                    this.currentTetromino.SetPosition(newPosition);
+                    this.currentTetromino.SetRotationIndex(targetRotationIndex);
+                    return;
+                }
             }
         }
 
         private bool IsValidMove(byte[,] shape, Vector2Int position)
         {
-            var size = new Vector2Int(shape.GetLength(0), shape.GetLength(1));
+            var size = Utils.GetSize(shape);
 
             for (var x = 0; x < size.x; x++)
             {
@@ -133,57 +110,29 @@ namespace AillieoTech.Game
             return true;
         }
 
-        private void OnDrawGizmos()
-        {
-            var basePosition = this.transform.position;
-
-            // board
-            for (var x = 0; x < Config.boardSize.x; x++)
-            {
-                for (var y = 0; y < Config.boardSize.y; y++)
-                {
-                    Vector3 position = basePosition + new Vector3(x * this.gridSize, y * this.gridSize, 0);
-                    Gizmos.color = this.board.GetValue(new Vector2Int(x, y)) == 0 ? this.emptyColor : this.filledColor;
-                    Gizmos.DrawCube(position, Vector3.one * this.gridSize * 0.5f);
-                }
-            }
-
-            // currentTetromino
-            if (this.currentTetromino != null)
-            {
-                Vector2Int tetrominoPosition = this.currentTetromino.GetPosition();
-                var shape = this.currentTetromino.GetShape();
-                var width = shape.GetLength(0);
-                var height = shape.GetLength(1);
-                for (var x = 0; x < width; x++)
-                {
-                    for (var y = 0; y < height; y++)
-                    {
-                        if (shape[x, y] == 1)
-                        {
-                            Vector3 position = basePosition + new Vector3((tetrominoPosition.x + x) * this.gridSize, (tetrominoPosition.y + y) * this.gridSize, 0);
-                            Gizmos.color = this.filledColor;
-                            Gizmos.DrawCube(position, Vector3.one * this.gridSize * 0.8f);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void HardDrop()
+        public void HardDrop()
         {
             var direction = Vector2Int.down;
-            while (this.IsValidMove(this.currentTetromino.GetShape(), this.currentTetromino.GetPosition() + direction))
+            var newPosition = this.currentTetromino.GetPosition() + direction;
+            while (this.IsValidMove(this.currentTetromino.GetShape(), newPosition))
             {
-                this.currentTetromino.Move(direction);
+                this.currentTetromino.SetPosition(newPosition);
+                newPosition = this.currentTetromino.GetPosition() + direction;
             }
+
+            this.CopyTetrominoToBoard();
+            this.GenerateNewTetromino();
         }
 
-        private void CheckAndClearRows()
+        public void CheckAndClearRows()
         {
             var yMin = this.currentTetromino.GetPosition().y;
-            var yMax = yMin + this.currentTetromino.GetShape().GetLength(1);
+            var shape = this.currentTetromino.GetShape();
+            var size = Utils.GetSize(shape);
+            var height = size.y;
+            var yMax = yMin + height;
             yMin = Mathf.Max(yMin, 0);
+            yMax = Mathf.Min(yMax, Config.boardSize.y);
             var fullRows = new List<int>();
             for (var y = yMin; y < yMax; ++y)
             {
@@ -227,6 +176,8 @@ namespace AillieoTech.Game
                     }
                 }
             }
+
+            this.score = this.score + fullRows.Count;
         }
     }
 }
