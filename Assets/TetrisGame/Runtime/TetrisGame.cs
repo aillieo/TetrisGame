@@ -33,29 +33,6 @@ namespace AillieoTech.Game
             }
         }
 
-        private void CopyTetrominoToBoard()
-        {
-            Vector2Int position = this.currentTetromino.GetPosition();
-            var shape = this.currentTetromino.GetShape();
-            var size = Utils.GetSize(shape);
-
-            for (var x = 0; x < size.x; x++)
-            {
-                for (var y = 0; y < size.y; y++)
-                {
-                    if (shape[x, y] == 1)
-                    {
-                        Vector2Int boardPosition = position + new Vector2Int(x, y);
-                        this.board.SetValue(boardPosition, 1);
-                    }
-                }
-            }
-
-            this.CheckAndClearRows();
-
-            this.currentTetromino = null;
-        }
-
         public void GenerateNewTetromino()
         {
             var allTypes = (TetrominoType[])Enum.GetValues(typeof(TetrominoType));
@@ -84,30 +61,6 @@ namespace AillieoTech.Game
                     return;
                 }
             }
-        }
-
-        private bool IsValidMove(byte[,] shape, Vector2Int position)
-        {
-            var size = Utils.GetSize(shape);
-
-            for (var x = 0; x < size.x; x++)
-            {
-                for (var y = 0; y < size.y; y++)
-                {
-                    if (shape[x, y] == 1)
-                    {
-                        Vector2Int cellPosition = position + new Vector2Int(x, y);
-                        if (cellPosition.x < 0 || cellPosition.x >= Config.boardSize.x ||
-                            cellPosition.y < 0 || cellPosition.y >= Config.boardSize.y ||
-                            this.board.GetValue(cellPosition) != 0)
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return true;
         }
 
         public void HardDrop()
@@ -178,6 +131,53 @@ namespace AillieoTech.Game
             }
 
             this.score = this.score + fullRows.Count;
+        }
+
+        private bool IsValidMove(byte[,] shape, Vector2Int position)
+        {
+            var size = Utils.GetSize(shape);
+
+            for (var x = 0; x < size.x; x++)
+            {
+                for (var y = 0; y < size.y; y++)
+                {
+                    if (shape[x, y] == 1)
+                    {
+                        Vector2Int cellPosition = position + new Vector2Int(x, y);
+                        if (cellPosition.x < 0 || cellPosition.x >= Config.boardSize.x ||
+                            cellPosition.y < 0 || cellPosition.y >= Config.boardSize.y ||
+                            this.board.GetValue(cellPosition) != 0)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void CopyTetrominoToBoard()
+        {
+            Vector2Int position = this.currentTetromino.GetPosition();
+            var shape = this.currentTetromino.GetShape();
+            var size = Utils.GetSize(shape);
+
+            for (var x = 0; x < size.x; x++)
+            {
+                for (var y = 0; y < size.y; y++)
+                {
+                    if (shape[x, y] == 1)
+                    {
+                        Vector2Int boardPosition = position + new Vector2Int(x, y);
+                        this.board.SetValue(boardPosition, 1);
+                    }
+                }
+            }
+
+            this.CheckAndClearRows();
+
+            this.currentTetromino = null;
         }
     }
 }

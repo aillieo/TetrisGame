@@ -18,6 +18,10 @@ namespace AillieoTech.Game
 
         public static readonly Dictionary<TetrominoType, Config> configs = new Dictionary<TetrominoType, Config>();
 
+        public byte[,] shape;
+        public Vector2Int spawnOffset;
+        public Dictionary<string, Vector2Int[]> wallKicks;
+
         private static readonly Dictionary<string, Vector2Int[]> wallKickValues = new Dictionary<string, Vector2Int[]>
         {
             { "0R", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, 1), new Vector2Int(0, -2), new Vector2Int(-1, -2) } },
@@ -53,10 +57,6 @@ namespace AillieoTech.Game
             { "L0", new Vector2Int[] { } },
             { "0L", new Vector2Int[] { } },
         };
-
-        public byte[,] shape;
-        public Vector2Int spawnOffset;
-        public Dictionary<string, Vector2Int[]> wallKicks;
 
         static Config()
         {

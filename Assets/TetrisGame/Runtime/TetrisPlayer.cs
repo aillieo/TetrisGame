@@ -10,11 +10,17 @@ namespace AillieoTech.Game
 
     public class TetrisPlayer : MonoBehaviour
     {
-        private readonly TetrisGame game = new TetrisGame();
+        private readonly Color emptyColor = Color.black;
+        private readonly Color filledColor = Color.blue;
+        private readonly float screenBorder = 0.08f;
+        private readonly float fontSizeFactor = 0.03f;
 
-        private readonly int gridSize = 20;
-        private readonly Color emptyColor = Color.white;
-        private readonly Color filledColor = Color.green;
+        private readonly float timeStep = 1f;
+
+        private TetrisGame game = new TetrisGame();
+        private float timer;
+
+        private Texture2D texture;
 
         private void Start()
         {
@@ -29,41 +35,58 @@ namespace AillieoTech.Game
             if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
             {
                 this.game.MoveTetromino(Vector2Int.left);
+                this.UpdateTexture();
             }
             else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
             {
                 this.game.MoveTetromino(Vector2Int.right);
+                this.UpdateTexture();
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
             {
                 this.game.MoveTetromino(Vector2Int.down);
+                this.UpdateTexture();
             }
             else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
             {
                 this.game.RotateTetromino(1);
+                this.UpdateTexture();
             }
             else if (Input.GetKeyDown(KeyCode.Space))
             {
                 this.game.HardDrop();
+                this.UpdateTexture();
+            }
+            else
+            {
+                this.timer += Time.deltaTime;
+                if (this.timer > this.timeStep)
+                {
+                    this.timer -= this.timeStep;
+                    this.game.MoveTetromino(Vector2Int.down);
+                    this.UpdateTexture();
+                }
             }
         }
 
-        private void OnDrawGizmos()
+        private void UpdateTexture()
         {
-            var boardWidth = Config.boardSize.x * this.gridSize;
-            var boardHeight = Config.boardSize.y * this.gridSize;
-            var basePosition = this.transform.position;
-            basePosition.x = basePosition.x - (boardWidth / 2) + (this.gridSize / 2);
-            basePosition.y = basePosition.y - (boardHeight / 2) + (this.gridSize / 2);
+            if (this.texture == null)
+            {
+                var width = Config.boardSize.x;
+                var height = Config.boardSize.y;
+                this.texture = new Texture2D(width, height);
+                this.texture.filterMode = FilterMode.Point;
+            }
 
             // board
             for (var x = 0; x < Config.boardSize.x; x++)
             {
                 for (var y = 0; y < Config.boardSize.y; y++)
                 {
-                    Vector3 position = basePosition + new Vector3(x * this.gridSize, y * this.gridSize, 0);
                     Gizmos.color = this.game.board.GetValue(new Vector2Int(x, y)) == 0 ? this.emptyColor : this.filledColor;
-                    Gizmos.DrawCube(position, Vector3.one * this.gridSize * 0.5f);
+
+                    this.texture.SetPixel(x, y, Gizmos.color);
                 }
             }
 
@@ -79,18 +102,54 @@ namespace AillieoTech.Game
                     {
                         if (shape[x, y] == 1)
                         {
-                            Vector3 position = basePosition + new Vector3((tetrominoPosition.x + x) * this.gridSize, (tetrominoPosition.y + y) * this.gridSize, 0);
                             Gizmos.color = this.filledColor;
-                            Gizmos.DrawCube(position, Vector3.one * this.gridSize * 0.8f);
+
+                            this.texture.SetPixel(tetrominoPosition.x + x, tetrominoPosition.y + y, Gizmos.color);
                         }
                     }
                 }
             }
+
+            this.texture.Apply();
         }
 
         private void OnGUI()
         {
-            GUILayout.Label($"Score:{this.game.score}");
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+
+            if (this.texture == null)
+            {
+                this.UpdateTexture();
+            }
+
+            // border
+            var border = screenWidth * this.screenBorder;
+            Rect textureRect = new Rect(border, border, screenWidth - (2 * border), screenHeight - (2 * border));
+            Rect full = new Rect(0, 0, 1, 1);
+            GUI.DrawTextureWithTexCoords(textureRect, this.texture, full);
+
+            // label
+            var fontSize = (int)(screenHeight * this.fontSizeFactor);
+            GUIStyle labelStyle = new GUIStyle("label");
+            labelStyle.fontSize = fontSize;
+            GUILayout.Label($"Score:{this.game.score}", labelStyle);
+
+            // button
+            GUIStyle buttonStyle = new GUIStyle("button");
+            buttonStyle.fontSize = fontSize;
+            if (GUILayout.Button("Restart", buttonStyle))
+            {
+                this.game = new TetrisGame();
+                this.timer = 0f;
+
+                if (this.game.currentTetromino == null)
+                {
+                    this.game.GenerateNewTetromino();
+                }
+
+                this.UpdateTexture();
+            }
         }
     }
 }
