@@ -8,4 +8,4 @@ A minimalist implementation of the classic Tetris game.
 
 ![image](Screenshots/1.png)
 
-[Click here to play]("https://aillieo.github.io/TetrisGame/")
+[Click here to play](https://aillieo.github.io/TetrisGame/)
