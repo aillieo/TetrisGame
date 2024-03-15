@@ -14,7 +14,7 @@ namespace AillieoTech.Game
 
         private byte[,] shape;
         private Vector2Int position;
-        private int rotationIndex;
+        private byte rotationIndex;
 
         public Tetromino(TetrominoType tetrominoType)
         {
@@ -46,12 +46,12 @@ namespace AillieoTech.Game
             this.position = newPosition;
         }
 
-        public int GetRotationIndex()
+        public byte GetRotationIndex()
         {
             return this.rotationIndex;
         }
 
-        public void SetRotationIndex(int newRotationIndex)
+        public void SetRotationIndex(byte newRotationIndex)
         {
             this.rotationIndex = newRotationIndex;
         }

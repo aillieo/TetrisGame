@@ -14,10 +14,18 @@ namespace AillieoTech.Game
     {
         public Board board = new Board();
         public Tetromino currentTetromino;
-        public int score;
+
+        public int score { get; set; }
+
+        public bool gameOver { get; private set; }
 
         public void MoveTetromino(Vector2Int direction)
         {
+            if (this.gameOver)
+            {
+                return;
+            }
+
             Vector2Int newPosition = this.currentTetromino.GetPosition() + direction;
             if (this.IsValidMove(this.currentTetromino.GetShape(), newPosition))
             {
@@ -38,14 +46,24 @@ namespace AillieoTech.Game
             var allTypes = (TetrominoType[])Enum.GetValues(typeof(TetrominoType));
             var randomIndex = UnityEngine.Random.Range(0, allTypes.Length);
             TetrominoType tetrominoType = allTypes[randomIndex];
-            this.currentTetromino = new Tetromino(tetrominoType);
+            var newTetromino = new Tetromino(tetrominoType);
+            this.currentTetromino = newTetromino;
+            if (!this.IsValidMove(newTetromino.GetShape(), newTetromino.GetPosition()))
+            {
+                this.gameOver = true;
+            }
         }
 
         public void RotateTetromino(int direction)
         {
+            if (this.gameOver)
+            {
+                return;
+            }
+
             var rotationIndex = this.currentTetromino.GetRotationIndex();
-            var targetRotationIndex = (rotationIndex + 1) % 4;
-            var key = $"{rotationIndex}{targetRotationIndex}".Replace('1', 'R').Replace('3', 'L');
+            var targetRotationIndex = (byte)((rotationIndex + 1) % 4);
+            var key = (byte)((rotationIndex * 10) + targetRotationIndex);
             var wallKicks = Config.configs[TetrominoType.I].wallKicks[key];
             var shape = this.currentTetromino.GetShape();
             var rotated = Utils.RotateArray(shape, direction > 0);
@@ -65,6 +83,11 @@ namespace AillieoTech.Game
 
         public void HardDrop()
         {
+            if (this.gameOver)
+            {
+                return;
+            }
+
             var direction = Vector2Int.down;
             var newPosition = this.currentTetromino.GetPosition() + direction;
             while (this.IsValidMove(this.currentTetromino.GetShape(), newPosition))
@@ -77,7 +100,7 @@ namespace AillieoTech.Game
             this.GenerateNewTetromino();
         }
 
-        public void CheckAndClearRows()
+        private void CheckAndClearRows()
         {
             var yMin = this.currentTetromino.GetPosition().y;
             var shape = this.currentTetromino.GetShape();

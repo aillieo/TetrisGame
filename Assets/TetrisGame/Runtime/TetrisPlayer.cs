@@ -10,17 +10,24 @@ namespace AillieoTech.Game
 
     public class TetrisPlayer : MonoBehaviour
     {
-        private readonly Color emptyColor = Color.black;
-        private readonly Color filledColor = Color.blue;
-        private readonly float screenBorder = 0.08f;
-        private readonly float fontSizeFactor = 0.03f;
+        private static readonly Color32 emptyColor0 = new Color32(0, 0, 0, 255);
+        private static readonly Color32 emptyColor1 = new Color32(20, 20, 20, 255);
+        private static readonly Color32 filledColor0 = new Color32(50, 46, 232, 255);
+        private static readonly Color32 filledColor1 = new Color32(56, 52, 252, 255);
+        private static readonly Color32 filledColor2 = new Color32(86, 102, 255, 255);
+        private static readonly float screenBorder = 20f;
+        private static readonly float fontSizeFactor = 0.03f;
 
-        private readonly float timeStep = 1f;
+        private static readonly float timeStep = 1f;
+
+        private Color32[] buffer;
 
         private TetrisGame game = new TetrisGame();
         private float timer;
 
         private Texture2D texture;
+        private GUIStyle buttonStyle;
+        private GUIStyle labelStyle;
 
         private void Start()
         {
@@ -60,9 +67,9 @@ namespace AillieoTech.Game
             else
             {
                 this.timer += Time.deltaTime;
-                if (this.timer > this.timeStep)
+                if (this.timer > timeStep)
                 {
-                    this.timer -= this.timeStep;
+                    this.timer -= timeStep;
                     this.game.MoveTetromino(Vector2Int.down);
                     this.UpdateTexture();
                 }
@@ -71,22 +78,49 @@ namespace AillieoTech.Game
 
         private void UpdateTexture()
         {
+            var width = Config.boardSize.x;
+            var height = Config.boardSize.y;
+
             if (this.texture == null)
             {
-                var width = Config.boardSize.x;
-                var height = Config.boardSize.y;
                 this.texture = new Texture2D(width, height);
                 this.texture.filterMode = FilterMode.Point;
             }
 
-            // board
-            for (var x = 0; x < Config.boardSize.x; x++)
+            if (this.buffer == null)
             {
-                for (var y = 0; y < Config.boardSize.y; y++)
-                {
-                    Gizmos.color = this.game.board.GetValue(new Vector2Int(x, y)) == 0 ? this.emptyColor : this.filledColor;
+                this.buffer = new Color32[width * height];
+            }
 
-                    this.texture.SetPixel(x, y, Gizmos.color);
+            // board
+            for (var x = 0; x < width; x++)
+            {
+                for (var y = 0; y < height; y++)
+                {
+                    var value = this.game.board.GetValue(new Vector2Int(x, y));
+
+                    if (value == 1)
+                    {
+                        if ((x + y) % 2 == 0)
+                        {
+                            this.buffer[(y * width) + x] = filledColor0;
+                        }
+                        else
+                        {
+                            this.buffer[(y * width) + x] = filledColor1;
+                        }
+                    }
+                    else
+                    {
+                        if ((x + y) % 2 == 0)
+                        {
+                            this.buffer[(y * width) + x] = emptyColor0;
+                        }
+                        else
+                        {
+                            this.buffer[(y * width) + x] = emptyColor1;
+                        }
+                    }
                 }
             }
 
@@ -102,13 +136,16 @@ namespace AillieoTech.Game
                     {
                         if (shape[x, y] == 1)
                         {
-                            Gizmos.color = this.filledColor;
+                            var xw = tetrominoPosition.x + x;
+                            var yw = tetrominoPosition.y + y;
 
-                            this.texture.SetPixel(tetrominoPosition.x + x, tetrominoPosition.y + y, Gizmos.color);
+                            this.buffer[(yw * width) + xw] = filledColor2;
                         }
                     }
                 }
             }
+
+            this.texture.SetPixels32(this.buffer);
 
             this.texture.Apply();
         }
@@ -124,31 +161,55 @@ namespace AillieoTech.Game
             }
 
             // border
-            var border = screenWidth * this.screenBorder;
-            Rect textureRect = new Rect(border, border, screenWidth - (2 * border), screenHeight - (2 * border));
-            Rect full = new Rect(0, 0, 1, 1);
+            var aspectRatio = Config.boardSize.y / Config.boardSize.x;
+            var heightInner = screenHeight - (2 * screenBorder);
+            var widthInner = screenHeight - (2 * screenBorder);
+            widthInner = Mathf.Min(heightInner / aspectRatio, widthInner);
+            heightInner = widthInner * aspectRatio;
+            var startX = (screenWidth - widthInner) / 2;
+            var startY = (screenHeight - heightInner) / 2;
+            var textureRect = new Rect(startX, startY, widthInner, heightInner);
+            var full = new Rect(0, 0, 1, 1);
             GUI.DrawTextureWithTexCoords(textureRect, this.texture, full);
 
             // label
-            var fontSize = (int)(screenHeight * this.fontSizeFactor);
-            GUIStyle labelStyle = new GUIStyle("label");
-            labelStyle.fontSize = fontSize;
-            GUILayout.Label($"Score:{this.game.score}", labelStyle);
-
-            // button
-            GUIStyle buttonStyle = new GUIStyle("button");
-            buttonStyle.fontSize = fontSize;
-            if (GUILayout.Button("Restart", buttonStyle))
+            var fontSize = (int)(screenHeight * fontSizeFactor);
+            if (this.labelStyle == null)
             {
-                this.game = new TetrisGame();
-                this.timer = 0f;
+                this.labelStyle = new GUIStyle("label");
+                this.labelStyle.fontSize = fontSize;
+            }
 
-                if (this.game.currentTetromino == null)
+            if (!this.game.gameOver)
+            {
+                GUILayout.Label($"Score:{this.game.score}", this.labelStyle);
+            }
+            else
+            {
+                GUILayout.Label($"Game over, Score:{this.game.score}", this.labelStyle);
+            }
+
+            if (this.game.gameOver)
+            {
+                // button
+                if (this.buttonStyle == null)
                 {
-                    this.game.GenerateNewTetromino();
+                    this.buttonStyle = new GUIStyle("button");
+                    this.buttonStyle.fontSize = fontSize;
                 }
 
-                this.UpdateTexture();
+                if (GUILayout.Button("Restart", this.buttonStyle))
+                {
+                    this.game = new TetrisGame();
+                    this.timer = 0f;
+
+                    if (this.game.currentTetromino == null)
+                    {
+                        this.game.GenerateNewTetromino();
+                    }
+
+                    this.UpdateTexture();
+                }
             }
         }
     }

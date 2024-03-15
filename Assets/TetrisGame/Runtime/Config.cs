@@ -6,6 +6,7 @@
 
 namespace AillieoTech.Game
 {
+    using System;
     using System.Collections.Generic;
     using UnityEngine;
 
@@ -20,42 +21,42 @@ namespace AillieoTech.Game
 
         public byte[,] shape;
         public Vector2Int spawnOffset;
-        public Dictionary<string, Vector2Int[]> wallKicks;
+        public Dictionary<byte, Vector2Int[]> wallKicks;
 
-        private static readonly Dictionary<string, Vector2Int[]> wallKickValues = new Dictionary<string, Vector2Int[]>
+        private static readonly Dictionary<byte, Vector2Int[]> wallKickValues = new Dictionary<byte, Vector2Int[]>
         {
-            { "0R", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, 1), new Vector2Int(0, -2), new Vector2Int(-1, -2) } },
-            { "R0", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, -1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
-            { "R2", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, -1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
-            { "2R", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, 1), new Vector2Int(0, -2), new Vector2Int(-1, -2) } },
-            { "2L", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, -2), new Vector2Int(1, -2) } },
-            { "L2", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(0, 2), new Vector2Int(-1, 2) } },
-            { "L0", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(0, 2), new Vector2Int(-1, 2) } },
-            { "0L", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, -2), new Vector2Int(1, -2) } },
+            { 01, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, 1), new Vector2Int(0, -2), new Vector2Int(-1, -2) } },
+            { 10, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, -1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
+            { 12, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, -1), new Vector2Int(0, 2), new Vector2Int(1, 2) } },
+            { 21, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, 1), new Vector2Int(0, -2), new Vector2Int(-1, -2) } },
+            { 23, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, -2), new Vector2Int(1, -2) } },
+            { 32, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(0, 2), new Vector2Int(-1, 2) } },
+            { 30, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(0, 2), new Vector2Int(-1, 2) } },
+            { 03, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, -2), new Vector2Int(1, -2) } },
         };
 
-        private static readonly Dictionary<string, Vector2Int[]> wallKickValuesI = new Dictionary<string, Vector2Int[]>
+        private static readonly Dictionary<byte, Vector2Int[]> wallKickValuesI = new Dictionary<byte, Vector2Int[]>
         {
-            { "0R", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-2, 0), new Vector2Int(1, 0), new Vector2Int(-2, -1), new Vector2Int(1, 2) } },
-            { "R0", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(2, 0), new Vector2Int(-1, 0), new Vector2Int(2, 1), new Vector2Int(-1, -2) } },
-            { "R2", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(2, 0), new Vector2Int(-1, 2), new Vector2Int(2, -1) } },
-            { "2R", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(-2, 0), new Vector2Int(1, -2), new Vector2Int(-2, 1) } },
-            { "2L", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(2, 0), new Vector2Int(-1, 0), new Vector2Int(2, 1), new Vector2Int(-1, -2) } },
-            { "L2", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-2, 0), new Vector2Int(1, 0), new Vector2Int(-2, -1), new Vector2Int(1, 2) } },
-            { "L0", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(-2, 0), new Vector2Int(1, -2), new Vector2Int(-2, 1) } },
-            { "0L", new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(2, 0), new Vector2Int(-1, 2), new Vector2Int(2, -1) } },
+            { 01, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-2, 0), new Vector2Int(1, 0), new Vector2Int(-2, -1), new Vector2Int(1, 2) } },
+            { 10, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(2, 0), new Vector2Int(-1, 0), new Vector2Int(2, 1), new Vector2Int(-1, -2) } },
+            { 12, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(2, 0), new Vector2Int(-1, 2), new Vector2Int(2, -1) } },
+            { 21, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(-2, 0), new Vector2Int(1, -2), new Vector2Int(-2, 1) } },
+            { 23, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(2, 0), new Vector2Int(-1, 0), new Vector2Int(2, 1), new Vector2Int(-1, -2) } },
+            { 32, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-2, 0), new Vector2Int(1, 0), new Vector2Int(-2, -1), new Vector2Int(1, 2) } },
+            { 30, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(-2, 0), new Vector2Int(1, -2), new Vector2Int(-2, 1) } },
+            { 03, new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(-1, 0), new Vector2Int(2, 0), new Vector2Int(-1, 2), new Vector2Int(2, -1) } },
         };
 
-        private static readonly Dictionary<string, Vector2Int[]> wallKickValuesO = new Dictionary<string, Vector2Int[]>
+        private static readonly Dictionary<byte, Vector2Int[]> wallKickValuesO = new Dictionary<byte, Vector2Int[]>
         {
-            { "0R", new Vector2Int[] { } },
-            { "R0", new Vector2Int[] { } },
-            { "R2", new Vector2Int[] { } },
-            { "2R", new Vector2Int[] { } },
-            { "2L", new Vector2Int[] { } },
-            { "L2", new Vector2Int[] { } },
-            { "L0", new Vector2Int[] { } },
-            { "0L", new Vector2Int[] { } },
+            { 01, Array.Empty<Vector2Int>() },
+            { 10, Array.Empty<Vector2Int>() },
+            { 12, Array.Empty<Vector2Int>() },
+            { 21, Array.Empty<Vector2Int>() },
+            { 23, Array.Empty<Vector2Int>() },
+            { 32, Array.Empty<Vector2Int>() },
+            { 30, Array.Empty<Vector2Int>() },
+            { 03, Array.Empty<Vector2Int>() },
         };
 
         static Config()
